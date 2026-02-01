@@ -1,20 +1,14 @@
 {
-  "id": "remote-bridge",
-  "name": "Remote Bridge",
-  "shortDescription": "Control Claude Code remotely from iOS/Android",
-  "longDescription": "Remote Bridge enables you to control Claude Code from your mobile device. Send commands, monitor output, and manage your Claude Code sessions from anywhere. Perfect for running commands while away from your desk, quick fixes from your phone, or monitoring long-running tasks.\n\nFeatures:\n- Real-time WebSocket connection for instant feedback\n- Typing mode to simulate keyboard input\n- API key authentication for security\n- Cross-platform support (macOS, Linux, Windows)\n\nRequires the companion mobile app available at: https://github.com/gabrielvisconti89/remote-bridge",
-  "category": "productivity",
-  "pricing": "free",
-  "keywords": ["remote", "mobile", "ios", "android", "terminal", "control", "websocket"],
-  "screenshots": [],
-  "requirements": {
-    "companion_app": {
-      "name": "Remote Bridge Mobile App",
-      "description": "iOS/Android companion app for remote control",
-      "url": "https://github.com/gabrielvisconti89/remote-bridge"
-    }
+  "name": "remote-bridge-plugin",
+  "owner": {
+    "name": "Gabriel Visconti"
   },
-  "changelog": {
-    "1.0.0": "Initial release - remote control from mobile devices"
-  }
+  "plugins": [
+    {
+      "name": "remote-bridge",
+      "source": ".",
+      "description": "Remote control Claude Code from mobile devices",
+      "version": "1.0.0"
+    }
+  ]
 }

@@ -2,8 +2,11 @@
   "name": "remote-bridge",
   "version": "1.0.0",
   "description": "Remote control Claude Code from your mobile device. Requires companion mobile app.",
-  "author": "gabrielvisconti89",
+  "author": {
+    "name": "Gabriel Visconti"
+  },
   "license": "MIT",
+  "keywords": ["remote", "mobile", "bridge", "websocket", "ios", "android"],
   "repository": "https://github.com/gabrielvisconti89/remote-bridge-plugin",
   "homepage": "https://github.com/gabrielvisconti89/remote-bridge",
   "engines": {

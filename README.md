@@ -23,10 +23,16 @@ Remote Bridge is a Claude Code plugin that starts a local server allowing you to
 
 ## Installation
 
-### From Claude Code Marketplace
+### From Marketplace
 
+**Step 1: Add the marketplace (one-time)**
 ```bash
-claude plugin install remote-bridge
+claude plugin marketplace add gabrielvisconti89/remote-bridge-plugin
+```
+
+**Step 2: Install the plugin**
+```bash
+claude plugin install remote-bridge@remote-bridge-plugin
 ```
 
 ### Manual Installation

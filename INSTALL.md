@@ -6,10 +6,16 @@ Remote Bridge consists of two components:
 1. **Plugin** (this repository) - Runs on your computer alongside Claude Code
 2. **Mobile App** - iOS/Android app for remote control ([separate repository](https://github.com/gabrielvisconti89/remote-bridge))
 
-## Quick Install (Claude Code Marketplace)
+## Quick Install (From Marketplace)
 
+**Step 1: Add the marketplace (one-time)**
 ```bash
-claude plugin install remote-bridge
+claude plugin marketplace add gabrielvisconti89/remote-bridge-plugin
+```
+
+**Step 2: Install the plugin**
+```bash
+claude plugin install remote-bridge@remote-bridge-plugin
 ```
 
 ## Manual Installation
@@ -136,8 +142,8 @@ sudo pacman -S xdotool
 ## Uninstall
 
 ```bash
-# From Claude Code Marketplace
-claude plugin uninstall remote-bridge
+# From marketplace installation
+claude plugin uninstall remote-bridge@remote-bridge-plugin
 
 # Manual uninstall
 rm -rf remote-bridge-plugin
