@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "remote-bridge",
-      "source": ".",
+      "source": "./",
       "description": "Remote control Claude Code from mobile devices",
       "version": "1.0.0"
     }
