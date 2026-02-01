@@ -1,0 +1,29 @@
+{
+  "name": "remote-bridge-skill",
+  "version": "1.0.0",
+  "description": "Claude Code skill for remote device control via HTTP/WebSocket",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "setup": "node setup.js"
+  },
+  "keywords": [
+    "claude-code",
+    "skill",
+    "remote-control",
+    "websocket"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "localtunnel": "^2.0.2",
+    "ws": "^8.14.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
