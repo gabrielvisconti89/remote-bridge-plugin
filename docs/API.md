@@ -1,4 +1,4 @@
-# Claude Bridge - API Reference
+# Remote Bridge Plugin - API Reference
 
 ## Base URL
 

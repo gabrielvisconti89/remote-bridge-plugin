@@ -1,47 +1,47 @@
 # Remote Bridge Skill
 
-Servidor Node.js que expoe funcionalidades para controle remoto via HTTP e WebSocket.
+Node.js server that exposes functionality for remote control via HTTP and WebSocket.
 
-## Instalacao
+## Installation
 
 ```bash
 npm install
 ```
 
-## Configuracao
+## Configuration
 
-Copie `.env.example` para `.env`:
+Copy `.env.example` to `.env`:
 
 ```bash
 cp .env.example .env
 ```
 
-Variaveis disponiveis:
+Available variables:
 
-| Variavel | Padrao | Descricao |
-|----------|--------|-----------|
-| SKILL_PORT | 3000 | Porta do servidor |
-| SKILL_HOST | 0.0.0.0 | Host de binding |
-| SKILL_LOG_LEVEL | info | Nivel de log (debug, info, warn, error) |
-| SKILL_API_KEY | - | Chave de API (opcional) |
-| SKILL_MAX_FILE_SIZE | 10485760 | Tamanho maximo de arquivo (10MB) |
-| SKILL_COMMAND_TIMEOUT | 30000 | Timeout de comandos (30s) |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| SKILL_PORT | 3000 | Server port |
+| SKILL_HOST | 0.0.0.0 | Binding host |
+| SKILL_LOG_LEVEL | info | Log level (debug, info, warn, error) |
+| SKILL_API_KEY | - | API key (optional) |
+| SKILL_MAX_FILE_SIZE | 10485760 | Maximum file size (10MB) |
+| SKILL_COMMAND_TIMEOUT | 30000 | Command timeout (30s) |
 
-## Uso
+## Usage
 
-### Iniciar
+### Start
 
 ```bash
 npm start
 ```
 
-### Desenvolvimento (auto-reload)
+### Development (auto-reload)
 
 ```bash
 npm run dev
 ```
 
-### Setup automatizado
+### Automated setup
 
 ```bash
 npm run setup
@@ -55,45 +55,45 @@ npm run setup
 GET /health
 ```
 
-### Sistema
+### System
 
 ```bash
-GET /system/info      # Informacoes do sistema
-GET /system/status    # Status do servidor
+GET /system/info      # System information
+GET /system/status    # Server status
 GET /system/load      # Load averages
-GET /system/network   # Interfaces de rede
+GET /system/network   # Network interfaces
 ```
 
-### Arquivos
+### Files
 
 ```bash
-GET /file/read?path=/caminho    # Ler arquivo
-GET /file/list?path=/caminho    # Listar diretorio
-GET /file/exists?path=/caminho  # Verificar existencia
-POST /file/write                # Escrever arquivo
-DELETE /file/delete?path=/caminho  # Deletar arquivo
+GET /file/read?path=/path        # Read file
+GET /file/list?path=/path        # List directory
+GET /file/exists?path=/path      # Check existence
+POST /file/write                 # Write file
+DELETE /file/delete?path=/path   # Delete file
 ```
 
 ### Shell
 
 ```bash
-POST /shell/exec     # Executar comando
-POST /shell/stream   # Executar com streaming (WebSocket)
-GET /shell/processes # Listar processos ativos
-POST /shell/kill     # Matar processo
+POST /shell/exec     # Execute command
+POST /shell/stream   # Execute with streaming (WebSocket)
+GET /shell/processes # List active processes
+POST /shell/kill     # Kill process
 ```
 
 ## WebSocket
 
-Conecte em `ws://localhost:3000` para comunicacao em tempo real.
+Connect to `ws://localhost:3000` for real-time communication.
 
-### Mensagens
+### Messages
 
 ```json
 // Ping
 { "type": "ping" }
 
-// Comando
+// Command
 {
   "type": "command",
   "action": "shell.exec",
@@ -107,24 +107,24 @@ Conecte em `ws://localhost:3000` para comunicacao em tempo real.
 }
 ```
 
-## Estrutura
+## Structure
 
 ```
 skill/
-├── server.js          # Servidor principal
-├── setup.js           # Script de instalacao
+├── server.js          # Main server
+├── setup.js           # Installation script
 ├── handlers/
-│   ├── index.js       # Agregador de handlers
-│   ├── file.js        # Operacoes de arquivo
-│   ├── shell.js       # Execucao de comandos
-│   └── system.js      # Info do sistema
+│   ├── index.js       # Handler aggregator
+│   ├── file.js        # File operations
+│   ├── shell.js       # Command execution
+│   └── system.js      # System info
 └── utils/
-    ├── config.js      # Configuracao
-    └── logger.js      # Sistema de logs
+    ├── config.js      # Configuration
+    └── logger.js      # Logging system
 ```
 
-## Seguranca
+## Security
 
-- Use `SKILL_API_KEY` para proteger endpoints
-- Nao exponha em redes publicas sem HTTPS
-- Configure firewall adequadamente
+- Use `SKILL_API_KEY` to protect endpoints
+- Do not expose on public networks without HTTPS
+- Configure firewall appropriately

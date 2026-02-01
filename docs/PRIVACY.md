@@ -4,7 +4,7 @@
 
 ## Overview
 
-Claude Bridge ("the App") is a remote control application that allows users to send commands to their own computers from mobile devices. This privacy policy explains how we handle your data.
+Remote Bridge Plugin ("the Plugin") is a remote control server that allows users to send commands to their own computers from mobile devices. This privacy policy explains how we handle your data.
 
 ## Data Collection
 
@@ -30,9 +30,9 @@ All data is stored locally on your device using secure storage mechanisms provid
 
 ### Between Your Devices
 
-When you use Claude Bridge, data is transmitted between:
-- Your mobile device (running the Claude Bridge app)
-- Your computer (running the Claude Bridge skill server)
+When you use Remote Bridge, data is transmitted between:
+- Your mobile device (running the Remote Bridge app)
+- Your computer (running the Remote Bridge plugin server)
 
 This communication occurs:
 - Over your local network (if using local IP)
@@ -70,7 +70,7 @@ You have the right to:
 
 ## Children's Privacy
 
-Claude Bridge is not intended for use by children under 13. We do not knowingly collect data from children.
+Remote Bridge is not intended for use by children under 13. We do not knowingly collect data from children.
 
 ## Changes to This Policy
 
@@ -80,11 +80,11 @@ We may update this privacy policy from time to time. We will notify you of any c
 
 If you have questions about this privacy policy, please contact us:
 
-- GitHub Issues: https://github.com/gabrielvisconti/claude-bridge/issues
-- Email: [your-email@example.com]
+- GitHub Issues: https://github.com/gabrielvisconti89/remote-bridge-plugin/issues
+- Email: gabrielvisconti89@github.com
 
 ## Open Source
 
-Claude Bridge is open source software. You can review the complete source code to verify our privacy practices:
+Remote Bridge Plugin is open source software. You can review the complete source code to verify our privacy practices:
 
-https://github.com/gabrielvisconti/claude-bridge
+https://github.com/gabrielvisconti89/remote-bridge-plugin
