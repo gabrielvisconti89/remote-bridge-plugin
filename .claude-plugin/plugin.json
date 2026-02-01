@@ -1,7 +1,7 @@
 {
   "name": "remote-bridge",
   "version": "1.0.0",
-  "description": "Remote control Claude Code from your mobile device. Requires companion mobile app.",
+  "description": "Remote control Claude Code from your mobile device. Requires companion mobile app. Requires Node.js >=18.0.0.",
   "author": {
     "name": "Gabriel Visconti"
   },
@@ -9,15 +9,28 @@
   "keywords": ["remote", "mobile", "bridge", "websocket", "ios", "android"],
   "repository": "https://github.com/gabrielvisconti89/remote-bridge-plugin",
   "homepage": "https://github.com/gabrielvisconti89/remote-bridge",
-  "engines": {
-    "claude-code": ">=1.0.0",
-    "node": ">=18.0.0"
-  },
   "hooks": {
-    "SessionStart": "./scripts/start-server.js",
-    "SessionEnd": "./scripts/stop-server.js"
-  },
-  "setup": {
-    "script": "scripts/install.sh"
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/start-server.js"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/stop-server.js"
+          }
+        ]
+      }
+    ]
   }
 }
