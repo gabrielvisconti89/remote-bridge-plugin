@@ -7,6 +7,8 @@ const localtunnel = require('localtunnel');
 
 const config = require('./utils/config');
 const logger = require('./utils/logger');
+const state = require('./utils/state');
+const { OutputWatcher } = require('./utils/outputWatcher');
 
 // Validate configuration
 try {
@@ -78,6 +80,8 @@ app.post('/status', (req, res) => {
     if (client.ws.readyState === 1) {
       client.ws.send(statusMessage);
       sent++;
+      // Track sent message
+      state.incrementSent();
     }
   });
 
@@ -102,6 +106,57 @@ app.delete('/status', (req, res) => {
   });
 
   res.json({ success: true, sent });
+});
+
+// Claude activity endpoint - receives tool usage from PostToolUse hook
+app.post('/claude/activity', (req, res) => {
+  const { type, tool, command, path, result, timestamp } = req.body;
+
+  // Build activity message
+  let activityText = `[${tool}]`;
+  if (command) {
+    activityText += ` ${command}`;
+  } else if (path) {
+    activityText += ` ${path}`;
+  }
+
+  // Broadcast to all connected clients
+  const activityMessage = JSON.stringify({
+    type: 'claude.activity',
+    tool,
+    command,
+    path,
+    result,
+    text: activityText,
+    timestamp: timestamp || new Date().toISOString(),
+  });
+
+  let sent = 0;
+  clients.forEach((client) => {
+    if (client.ws.readyState === 1) {
+      client.ws.send(activityMessage);
+      sent++;
+      state.incrementSent();
+    }
+  });
+
+  console.log(`✽ [Claude Activity] ${activityText}`);
+
+  res.json({ success: true, sent });
+});
+
+// Output log clear endpoint - clears the output log file
+app.delete('/claude/output', (req, res) => {
+  // Import will happen after outputWatcher is created, so use late binding
+  const { OUTPUT_FILE } = require('./utils/outputWatcher');
+  const fs = require('fs');
+
+  try {
+    fs.writeFileSync(OUTPUT_FILE, '');
+    res.json({ success: true, message: 'Output log cleared' });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to clear output log', message: err.message });
+  }
 });
 
 // Register handlers
@@ -143,8 +198,8 @@ let clientIdCounter = 0;
 // WebSocket: Connection handler
 wss.on('connection', (ws, req) => {
   // Validate API key from query parameter
+  const url = new URL(req.url, 'http://localhost');
   if (config.apiKey) {
-    const url = new URL(req.url, 'http://localhost');
     const key = url.searchParams.get('key');
 
     if (key !== config.apiKey) {
@@ -154,17 +209,27 @@ wss.on('connection', (ws, req) => {
     }
   }
 
+  // Get device name from query parameter (sent by mobile app)
+  const deviceName = url.searchParams.get('device') || 'Unknown Device';
+
   const clientId = ++clientIdCounter;
   const clientIp = req.socket.remoteAddress;
 
   clients.set(clientId, {
     ws,
     ip: clientIp,
+    deviceName,
     connectedAt: new Date(),
     isAlive: true,
   });
 
-  logger.info('WebSocket client connected', { clientId, ip: clientIp, total: clients.size });
+  logger.info('WebSocket client connected', { clientId, ip: clientIp, deviceName, total: clients.size });
+
+  // Update state: mark as connected with device info
+  state.updateState({
+    connected: true,
+    connectedDevice: deviceName,
+  });
 
   // Send welcome message
   ws.send(JSON.stringify({
@@ -173,6 +238,9 @@ wss.on('connection', (ws, req) => {
     message: 'Welcome to Remote Bridge',
     timestamp: new Date().toISOString(),
   }));
+
+  // Count this as a received message (connection)
+  state.incrementReceived();
 
   // Pong handler for heartbeat
   ws.on('pong', () => {
@@ -187,6 +255,9 @@ wss.on('connection', (ws, req) => {
     try {
       const message = JSON.parse(data.toString());
       logger.debug('WebSocket message received', { clientId, type: message.type });
+
+      // Track received message
+      state.incrementReceived();
 
       handleWebSocketMessage(clientId, ws, message);
     } catch (err) {
@@ -207,6 +278,14 @@ wss.on('connection', (ws, req) => {
       reason: reason.toString(),
       total: clients.size,
     });
+
+    // Update state: if no more clients, mark as disconnected
+    if (clients.size === 0) {
+      state.updateState({
+        connected: false,
+        connectedDevice: null,
+      });
+    }
   });
 
   // Error handler
@@ -270,6 +349,8 @@ function broadcastMessage(senderId, payload) {
     if (clientId !== senderId && client.ws.readyState === 1) {
       client.ws.send(message);
       sent++;
+      // Track sent message
+      state.incrementSent();
     }
   });
 
@@ -291,6 +372,41 @@ const heartbeatInterval = setInterval(() => {
   });
 }, config.wsHeartbeatInterval);
 
+// Output watcher - monitors Claude Code terminal output
+const outputWatcher = new OutputWatcher();
+outputWatcher.start();
+
+outputWatcher.on('output', (line) => {
+  // Skip empty lines after cleaning
+  if (!line || line.trim().length === 0) {
+    return;
+  }
+
+  // Broadcast to all connected clients
+  const message = JSON.stringify({
+    type: 'claude.output',
+    content: line,
+    timestamp: new Date().toISOString(),
+  });
+
+  let sent = 0;
+  clients.forEach((client) => {
+    if (client.ws.readyState === 1) {
+      client.ws.send(message);
+      sent++;
+      state.incrementSent();
+    }
+  });
+
+  if (sent > 0) {
+    logger.debug('Output broadcast', { line: line.substring(0, 100), recipients: sent });
+  }
+});
+
+outputWatcher.on('error', (err) => {
+  logger.error('Output watcher error', { error: err.message });
+});
+
 // Cleanup on server close
 wss.on('close', () => {
   clearInterval(heartbeatInterval);
@@ -304,10 +420,15 @@ server.listen(config.port, config.host, async () => {
     environment: process.env.NODE_ENV || 'development',
   });
 
+  // Reset metrics on server start
+  state.resetMetrics();
+
   // Create localtunnel for public access
   let tunnel = null;
+  let publicUrl = null;
   try {
     tunnel = await localtunnel({ port: config.port });
+    publicUrl = tunnel.url;
 
     // Display connection info
     console.log('');
@@ -330,6 +451,7 @@ server.listen(config.port, config.host, async () => {
     });
   } catch (err) {
     logger.error('Failed to create tunnel', { error: err.message });
+    publicUrl = `http://localhost:${config.port}`;
     console.log('');
     console.log('============================================================');
     console.log('           REMOTE BRIDGE - Local Only                       ');
@@ -341,6 +463,17 @@ server.listen(config.port, config.host, async () => {
     console.log('');
   }
 
+  // Save state with connection info
+  state.updateState({
+    enabled: true,
+    pid: process.pid,
+    url: publicUrl,
+    apiKey: config.apiKey,
+    connected: false,
+    connectedDevice: null,
+    startedAt: new Date().toISOString(),
+  });
+
   logger.info(`HTTP: http://${config.host}:${config.port}`);
   logger.info(`WebSocket: ws://${config.host}:${config.port}`);
 });
@@ -348,6 +481,12 @@ server.listen(config.port, config.host, async () => {
 // Graceful shutdown
 process.on('SIGTERM', () => {
   logger.info('SIGTERM received, shutting down gracefully');
+
+  // Stop output watcher
+  outputWatcher.stop();
+
+  // Clear state
+  state.clearState();
 
   // Close WebSocket connections
   clients.forEach((client) => {
@@ -372,4 +511,4 @@ process.on('SIGINT', () => {
   process.emit('SIGTERM');
 });
 
-module.exports = { app, server, wss, clients, broadcastMessage };
+module.exports = { app, server, wss, clients, broadcastMessage, outputWatcher };

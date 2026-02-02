@@ -5,6 +5,7 @@ const os = require('os');
 
 const config = require('../utils/config');
 const logger = require('../utils/logger');
+const commandQueue = require('../utils/commandQueue');
 
 // Platform detection
 const platform = os.platform();
@@ -307,11 +308,6 @@ function macOSTyper(command, submit, app) {
       .replace(/\\/g, '\\\\')
       .replace(/"/g, '\\"');
 
-    const keystroke = submit
-      ? `keystroke "${escapedCommand}"
-         keystroke return`
-      : `keystroke "${escapedCommand}"`;
-
     let script;
 
     if (app === 'iTerm2') {
@@ -324,11 +320,19 @@ function macOSTyper(command, submit, app) {
         end tell
       `;
     } else {
+      // For Terminal.app - more robust approach with proper delays
       script = `
-        tell application "${app}" to activate
-        delay 0.3
+        tell application "${app}"
+          activate
+          delay 0.2
+        end tell
         tell application "System Events"
-          ${keystroke}
+          tell process "${app}"
+            set frontmost to true
+            delay 0.1
+            keystroke "${escapedCommand}"
+            ${submit ? 'delay 0.1\nkeystroke return' : ''}
+          end tell
         end tell
       `;
     }
@@ -462,13 +466,16 @@ function getTerminalTyper() {
 
 /**
  * POST /shell/type
- * Type a command into the terminal session where this server is running
- * Body: { command, submit? }
- * Supports: macOS (AppleScript), Linux (xdotool), Windows (PowerShell SendKeys)
+ * Queue a command for review/execution (plug-and-play, no permissions required)
+ * Body: { command, deviceName? }
+ *
+ * NOTE: This endpoint has been changed from "typing mode" (AppleScript) to
+ * "command queue mode" for reliability and zero-permission operation.
+ * Commands are queued and displayed in the terminal log for the user to review.
  */
 router.post('/type', async (req, res, next) => {
   try {
-    const { command, submit = true } = req.body;
+    const { command, deviceName } = req.body;
 
     if (!command) {
       return res.status(400).json({
@@ -477,48 +484,171 @@ router.post('/type', async (req, res, next) => {
       });
     }
 
-    const app = terminalApp || 'Terminal';
+    // Get device name from request or connected client
+    const device = deviceName || 'Mobile App';
 
-    logger.info('Typing command to terminal', { command, submit, platform, app });
-    console.log(`\n⌨️  [Remote Bridge] Typing to ${platform}/${app}: ${command}`);
+    // Add command to queue
+    const entry = commandQueue.addCommand(command, device);
 
-    const typer = getTerminalTyper();
+    logger.info('Command queued', { id: entry.id, command, from: device });
 
-    if (!typer) {
-      return res.status(501).json({
-        success: false,
-        error: 'Platform not supported',
-        message: `Typing mode is not supported on ${platform}`,
-        supportedPlatforms: ['darwin (macOS)', 'linux', 'win32 (Windows)'],
-      });
-    }
+    // Display prominent log in terminal
+    console.log('');
+    console.log('\x1b[36m' + '=' .repeat(60) + '\x1b[0m');
+    console.log('\x1b[36m  \x1b[1m\x1b[33m New command received from mobile\x1b[0m');
+    console.log('\x1b[36m' + '=' .repeat(60) + '\x1b[0m');
+    console.log(`  \x1b[90mFrom:\x1b[0m    ${device}`);
+    console.log(`  \x1b[90mCommand:\x1b[0m \x1b[1m${command}\x1b[0m`);
+    console.log(`  \x1b[90mID:\x1b[0m      ${entry.id}`);
+    console.log('');
+    console.log('  \x1b[32mRun /remote-bridge:inbox to view and execute\x1b[0m');
+    console.log('\x1b[36m' + '=' .repeat(60) + '\x1b[0m');
+    console.log('');
 
-    try {
-      let result;
-      if (platform === 'darwin') {
-        result = await typer(command, submit, app);
-      } else {
-        result = await typer(command, submit);
-      }
-
-      res.json({
-        success: true,
-        command,
-        submitted: submit,
-        platform,
-        ...result,
-      });
-    } catch (err) {
-      res.status(500).json({
-        success: false,
-        command,
-        platform,
-        ...err,
-      });
-    }
+    res.json({
+      success: true,
+      queued: true,
+      id: entry.id,
+      command,
+      from: device,
+      receivedAt: entry.receivedAt,
+      message: 'Command queued successfully. Run /remote-bridge:inbox to execute.',
+    });
   } catch (err) {
     next(err);
   }
+});
+
+/**
+ * GET /shell/queue
+ * List pending commands in the queue
+ */
+router.get('/queue', (req, res) => {
+  const { all } = req.query;
+
+  const commands = all === 'true' ? commandQueue.getAllCommands() : commandQueue.getCommands();
+
+  res.json({
+    success: true,
+    count: commands.length,
+    pendingCount: commandQueue.getPendingCount(),
+    commands,
+  });
+});
+
+/**
+ * DELETE /shell/queue/:id
+ * Remove a specific command from the queue
+ */
+router.delete('/queue/:id', (req, res) => {
+  const { id } = req.params;
+
+  const removed = commandQueue.clearCommand(id);
+
+  if (!removed) {
+    return res.status(404).json({
+      error: 'Not Found',
+      message: `Command ${id} not found in queue`,
+    });
+  }
+
+  logger.info('Command removed from queue', { id });
+
+  res.json({
+    success: true,
+    id,
+    message: 'Command removed from queue',
+  });
+});
+
+/**
+ * DELETE /shell/queue
+ * Clear all commands from the queue
+ */
+router.delete('/queue', (req, res) => {
+  commandQueue.clearAll();
+
+  logger.info('Command queue cleared');
+
+  res.json({
+    success: true,
+    message: 'All commands cleared from queue',
+  });
+});
+
+/**
+ * POST /shell/queue/:id/execute
+ * Execute a queued command
+ */
+router.post('/queue/:id/execute', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { cwd, timeout } = req.body;
+
+    const cmd = commandQueue.getCommand(id);
+
+    if (!cmd) {
+      return res.status(404).json({
+        error: 'Not Found',
+        message: `Command ${id} not found in queue`,
+      });
+    }
+
+    if (cmd.status !== 'pending') {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: `Command ${id} has already been ${cmd.status}`,
+      });
+    }
+
+    // Mark as executed
+    commandQueue.updateCommandStatus(id, 'executed');
+
+    logger.info('Executing queued command', { id, command: cmd.command });
+    console.log(`\n  [Remote Bridge] Executing queued command: ${cmd.command}`);
+
+    // Execute the command
+    const result = await executeCommand(cmd.command, { cwd, timeout });
+
+    res.json({
+      ...result,
+      queueId: id,
+      from: cmd.from,
+    });
+  } catch (err) {
+    if (err.processId) {
+      return res.status(500).json(err);
+    }
+    next(err);
+  }
+});
+
+/**
+ * POST /shell/queue/:id/dismiss
+ * Dismiss a queued command without executing
+ */
+router.post('/queue/:id/dismiss', (req, res) => {
+  const { id } = req.params;
+
+  const cmd = commandQueue.getCommand(id);
+
+  if (!cmd) {
+    return res.status(404).json({
+      error: 'Not Found',
+      message: `Command ${id} not found in queue`,
+    });
+  }
+
+  commandQueue.updateCommandStatus(id, 'dismissed');
+
+  logger.info('Command dismissed', { id, command: cmd.command });
+
+  res.json({
+    success: true,
+    id,
+    command: cmd.command,
+    message: 'Command dismissed',
+  });
 });
 
 /**

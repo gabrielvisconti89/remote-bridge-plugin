@@ -61,18 +61,63 @@ Available environment variables:
 | `SKILL_API_KEY` | (auto-generated) | Authentication key |
 | `SKILL_LOG_LEVEL` | info | Log verbosity (debug, info, warn, error) |
 
-## Connection Info
+## Using the Plugin
 
-When the server starts (automatically with each Claude Code session), it displays:
+### Start the Server
+
+Run this command in Claude Code:
+```
+/remote-bridge:start
+```
+
+This displays a QR code:
 
 ```
-============================================================
-           REMOTE BRIDGE - Connection Info
-============================================================
-  Public URL:  https://xxxxx.loca.lt
-  API Key:     xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-  Local:       http://localhost:3000
-============================================================
+╭─────────────────────────────────────────────────────────────╮
+│          🌐 Remote Bridge - Aguardando Conexão...           │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│               [QR CODE HERE]                                │
+│                                                             │
+│  Escaneie com o app Remote Bridge para conectar             │
+│                                                             │
+├─────────────────────────────────────────────────────────────┤
+│  URL: https://xxxxx.loca.lt                                 │
+│  Key: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx                      │
+╰─────────────────────────────────────────────────────────────╯
+```
+
+### Connect with Mobile App
+
+1. Open the Remote Bridge app on your phone
+2. Tap "Scan QR Code"
+3. Point at the QR code in your terminal
+4. The app connects automatically!
+
+### Connection Status
+
+Once connected, you'll see a statusline:
+```
+🌐 Remote Bridge: 🟢 Conectado | ↑ 5 ↓ 12 | 📱 iPhone de Gabriel
+```
+
+This shows:
+- Connection status (🟢 Connected / 🟡 Waiting)
+- Message counters (↑ sent / ↓ received)
+- Connected device name
+
+### Check Status
+
+For detailed status information:
+```
+/remote-bridge:status
+```
+
+### Stop the Server
+
+When you're done:
+```
+/remote-bridge:stop
 ```
 
 ## Mobile App Setup
@@ -82,9 +127,18 @@ Get the companion mobile app from: [github.com/gabrielvisconti89/remote-bridge](
 ### iOS
 
 1. Download "Remote Bridge" from the App Store
-2. Open the app and tap "Add Connection"
-3. Enter the URL and API Key from the server output
-4. Tap "Save" and then tap the connection to connect
+2. Open the app
+3. Tap "Scan QR Code" to scan the terminal QR code
+4. Or tap "Add Connection" to enter URL and API Key manually
+
+### Manual Connection
+
+If QR scanning doesn't work:
+
+1. Note the URL and API Key from the terminal
+2. In the app, tap "Add Connection"
+3. Enter the URL and API Key
+4. Tap "Save" and connect
 
 ### Local Network
 

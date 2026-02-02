@@ -1,6 +1,7 @@
 const fileHandler = require('./file');
 const shellHandler = require('./shell');
 const systemHandler = require('./system');
+const modesHandler = require('./modes');
 
 const logger = require('../utils/logger');
 
@@ -23,6 +24,10 @@ function register(app) {
   app.use('/system', systemHandler);
   logger.debug('Registered /system routes');
 
+  // Mode operations
+  app.use('/modes', modesHandler);
+  logger.debug('Registered /modes routes');
+
   logger.info('All handlers registered');
 }
 
@@ -31,4 +36,5 @@ module.exports = {
   fileHandler,
   shellHandler,
   systemHandler,
+  modesHandler,
 };

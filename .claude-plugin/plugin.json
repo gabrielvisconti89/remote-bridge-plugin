@@ -1,14 +1,36 @@
 {
   "name": "remote-bridge",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Remote control Claude Code from your mobile device. Requires companion mobile app. Requires Node.js >=18.0.0.",
   "author": {
     "name": "Gabriel Visconti"
   },
   "license": "MIT",
-  "keywords": ["remote", "mobile", "bridge", "websocket", "ios", "android"],
+  "keywords": ["remote", "mobile", "bridge", "websocket", "ios", "android", "qrcode"],
   "repository": "https://github.com/gabrielvisconti89/remote-bridge-plugin",
   "homepage": "https://github.com/gabrielvisconti89/remote-bridge",
+  "skills": [
+    {
+      "name": "start",
+      "path": "skills/start/SKILL.md",
+      "description": "Start Remote Bridge server and display QR code for connection"
+    },
+    {
+      "name": "stop",
+      "path": "skills/stop/SKILL.md",
+      "description": "Stop the Remote Bridge server"
+    },
+    {
+      "name": "status",
+      "path": "skills/status/SKILL.md",
+      "description": "Show Remote Bridge server status"
+    },
+    {
+      "name": "inbox",
+      "path": "skills/inbox/SKILL.md",
+      "description": "View and execute pending commands from mobile app"
+    }
+  ],
   "hooks": {
     "SessionStart": [
       {
@@ -31,6 +53,21 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/post-tool-hook.js"
+          }
+        ]
+      }
     ]
+  },
+  "statusline": {
+    "command": "${CLAUDE_PLUGIN_ROOT}/scripts/statusline.sh",
+    "refresh": 5
   }
 }
