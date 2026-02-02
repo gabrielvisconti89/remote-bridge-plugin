@@ -2,6 +2,7 @@ const fileHandler = require('./file');
 const shellHandler = require('./shell');
 const systemHandler = require('./system');
 const modesHandler = require('./modes');
+const screenshotHandler = require('./screenshot');
 
 const logger = require('../utils/logger');
 
@@ -28,6 +29,10 @@ function register(app) {
   app.use('/modes', modesHandler);
   logger.debug('Registered /modes routes');
 
+  // Screenshot operations
+  app.use('/screenshot', screenshotHandler);
+  logger.debug('Registered /screenshot routes');
+
   logger.info('All handlers registered');
 }
 
@@ -37,4 +42,5 @@ module.exports = {
   shellHandler,
   systemHandler,
   modesHandler,
+  screenshotHandler,
 };

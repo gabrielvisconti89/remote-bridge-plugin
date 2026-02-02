@@ -548,6 +548,215 @@ Atualmente não há rate limiting implementado. Para uso em produção exposto p
 
 ---
 
+## Screenshot Operations
+
+### POST /screenshot/capture
+
+Trigger a screenshot capture or save a screenshot from file path.
+
+**Request:**
+```bash
+curl -X POST http://localhost:3000/screenshot/capture \
+  -H "X-API-Key: {api-key}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "imagePath": "/path/to/screenshot.png"
+  }'
+```
+
+**Body:**
+| Campo | Tipo | Obrigatório | Descrição |
+|-------|------|-------------|-----------|
+| imagePath | string | Não | Path to existing screenshot file |
+| selector | string | Não | Element selector (for Playwright capture) |
+| fullPage | boolean | Não | Capture full page (default: false) |
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "id": "scr_abc123def456",
+  "path": "/Users/.../screenshots/scr_abc123def456.png",
+  "url": "https://xxx.loca.lt/screenshot/scr_abc123def456",
+  "size": 245760,
+  "timestamp": "2026-02-02T12:00:00.000Z"
+}
+```
+
+### POST /screenshot/save
+
+Save a screenshot from base64 encoded image data.
+
+**Request:**
+```bash
+curl -X POST http://localhost:3000/screenshot/save \
+  -H "X-API-Key: {api-key}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "imageData": "iVBORw0KGgo...",
+    "format": "png"
+  }'
+```
+
+**Body:**
+| Campo | Tipo | Obrigatório | Descrição |
+|-------|------|-------------|-----------|
+| imageData | string | Sim | Base64 encoded image |
+| format | string | Não | Image format (default: png) |
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "id": "scr_abc123def456",
+  "path": "/Users/.../screenshots/scr_abc123def456.png",
+  "url": "https://xxx.loca.lt/screenshot/scr_abc123def456",
+  "size": 245760,
+  "timestamp": "2026-02-02T12:00:00.000Z"
+}
+```
+
+### GET /screenshot/latest
+
+Get the most recent screenshot.
+
+**Request:**
+```bash
+curl http://localhost:3000/screenshot/latest \
+  -H "X-API-Key: {api-key}" \
+  --output screenshot.png
+```
+
+**Response:** Binary PNG image
+
+### GET /screenshot/:id
+
+Get a specific screenshot by ID.
+
+**Request:**
+```bash
+curl http://localhost:3000/screenshot/scr_abc123def456 \
+  -H "X-API-Key: {api-key}" \
+  --output screenshot.png
+```
+
+**Response:** Binary PNG image
+
+### GET /screenshots
+
+List all available screenshots.
+
+**Request:**
+```bash
+curl http://localhost:3000/screenshot \
+  -H "X-API-Key: {api-key}"
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "count": 5,
+  "screenshots": [
+    {
+      "id": "scr_abc123def456",
+      "path": "/Users/.../screenshots/scr_abc123def456.png",
+      "url": "https://xxx.loca.lt/screenshot/scr_abc123def456",
+      "size": 245760,
+      "timestamp": "2026-02-02T12:00:00.000Z"
+    }
+  ]
+}
+```
+
+### DELETE /screenshot/:id
+
+Delete a specific screenshot.
+
+**Request:**
+```bash
+curl -X DELETE http://localhost:3000/screenshot/scr_abc123def456 \
+  -H "X-API-Key: {api-key}"
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "message": "Screenshot deleted"
+}
+```
+
+---
+
+## Image Upload
+
+### POST /screenshot/upload
+
+Upload an image from mobile app for Claude to analyze.
+
+**Request:**
+```bash
+curl -X POST http://localhost:3000/screenshot/upload \
+  -H "X-API-Key: {api-key}" \
+  -F "file=@photo.jpg"
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "id": "img_abc123def456",
+  "path": "/Users/.../uploads/img_abc123def456.jpg",
+  "size": 123456,
+  "originalName": "photo.jpg",
+  "timestamp": "2026-02-02T12:00:00.000Z",
+  "message": "Image uploaded and ready for Claude to analyze"
+}
+```
+
+### GET /screenshot/image/:id
+
+Get an uploaded image.
+
+**Request:**
+```bash
+curl http://localhost:3000/screenshot/image/img_abc123def456 \
+  -H "X-API-Key: {api-key}" \
+  --output image.jpg
+```
+
+**Response:** Binary image
+
+### GET /screenshot/images
+
+List all uploaded images.
+
+**Request:**
+```bash
+curl http://localhost:3000/screenshot/images \
+  -H "X-API-Key: {api-key}"
+```
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "count": 3,
+  "images": [
+    {
+      "id": "img_abc123def456",
+      "path": "/Users/.../uploads/img_abc123def456.jpg",
+      "url": "https://xxx.loca.lt/screenshot/image/img_abc123def456",
+      "size": 123456,
+      "timestamp": "2026-02-02T12:00:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
 ## Exemplos
 
 ### Python
