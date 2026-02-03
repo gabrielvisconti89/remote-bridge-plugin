@@ -47,27 +47,5 @@
   "statusline": {
     "command": "${CLAUDE_PLUGIN_ROOT}/scripts/statusline.sh",
     "refresh": 5
-  },
-  "skills": [
-    {
-      "name": "start",
-      "path": "skills/start/SKILL.md",
-      "description": "Start Remote Bridge server and display QR code for connection"
-    },
-    {
-      "name": "stop",
-      "path": "skills/stop/SKILL.md",
-      "description": "Stop the Remote Bridge server"
-    },
-    {
-      "name": "status",
-      "path": "skills/status/SKILL.md",
-      "description": "Show Remote Bridge server status"
-    },
-    {
-      "name": "inbox",
-      "path": "skills/inbox/SKILL.md",
-      "description": "View and execute pending commands from mobile app"
-    }
-  ]
+  }
 }
