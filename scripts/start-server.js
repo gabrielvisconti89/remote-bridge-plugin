@@ -9,10 +9,22 @@ const PID_FILE = path.join(os.tmpdir(), 'claude-bridge.pid');
 const LOG_FILE = path.join(os.tmpdir(), 'claude-bridge.log');
 const STATE_DIR = path.join(os.homedir(), '.claude', 'remote-bridge');
 const STATE_FILE = path.join(STATE_DIR, 'state.json');
+const SERVER_PORT = 3000;
 
 // Ensure state directory exists
 if (!fs.existsSync(STATE_DIR)) {
   fs.mkdirSync(STATE_DIR, { recursive: true });
+}
+
+// Check if port is in use and return the PID using it
+function getPortPid(port) {
+  try {
+    const result = execSync(`lsof -i :${port} -t 2>/dev/null`, { encoding: 'utf8' });
+    const pids = result.trim().split('\n').filter(Boolean);
+    return pids.length > 0 ? parseInt(pids[0]) : null;
+  } catch (e) {
+    return null;
+  }
 }
 
 // Check if running as hook or directly
@@ -49,7 +61,7 @@ process.stdin.on('end', () => {
 });
 
 function startServer() {
-  // Check if already running
+  // Check if already running via PID file
   if (fs.existsSync(PID_FILE)) {
     const pid = parseInt(fs.readFileSync(PID_FILE, 'utf8'));
     try {
@@ -62,6 +74,30 @@ function startServer() {
       // Process doesn't exist, clean up stale PID file
       fs.unlinkSync(PID_FILE);
     }
+  }
+
+  // Check if port is already in use (catches orphaned servers without PID file)
+  const portPid = getPortPid(SERVER_PORT);
+  if (portPid) {
+    // Check if we have valid state - if so, it's likely our server
+    if (fs.existsSync(STATE_FILE)) {
+      try {
+        const state = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+        if (state.url && state.apiKey) {
+          console.error(`Remote Bridge already running on port ${SERVER_PORT} (PID: ${portPid})`);
+          // Recreate PID file for future checks
+          fs.writeFileSync(PID_FILE, String(portPid));
+          showQRCode();
+          process.exit(0);
+        }
+      } catch (e) {
+        // State file exists but is invalid
+      }
+    }
+    // Port in use but not by our server (or state is invalid)
+    console.error(`Error: Port ${SERVER_PORT} is already in use by another process (PID: ${portPid})`);
+    console.error('Kill it with: kill ' + portPid);
+    process.exit(1);
   }
 
   // Check if skill directory exists
