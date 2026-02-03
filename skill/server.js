@@ -9,6 +9,8 @@ const config = require('./utils/config');
 const logger = require('./utils/logger');
 const state = require('./utils/state');
 const { OutputWatcher } = require('./utils/outputWatcher');
+const { setupTerminalWebSocket, createTerminalRouter } = require('./handlers/terminal');
+const ptyManager = require('./utils/ptyManager');
 
 // Validate configuration
 try {
@@ -163,6 +165,9 @@ app.delete('/claude/output', (req, res) => {
 const handlers = require('./handlers');
 handlers.register(app);
 
+// Register terminal HTTP routes
+app.use('/terminal', createTerminalRouter());
+
 // Middleware: 404 handler
 app.use((req, res) => {
   res.status(404).json({
@@ -191,6 +196,9 @@ const server = http.createServer(app);
 // WebSocket Server
 const wss = new WebSocketServer({ server });
 
+// Setup terminal WebSocket handler
+const terminalWsHandler = setupTerminalWebSocket(wss);
+
 // Connected clients map
 const clients = new Map();
 let clientIdCounter = 0;
@@ -207,6 +215,21 @@ wss.on('connection', (ws, req) => {
       logger.warn('WebSocket connection rejected: invalid key');
       return;
     }
+  }
+
+  // Check if this is a terminal connection
+  const isTerminal = url.searchParams.get('terminal') === 'true';
+  if (isTerminal) {
+    // Handle as terminal WebSocket connection
+    const params = {
+      clientId: url.searchParams.get('clientId'),
+      sessionId: url.searchParams.get('sessionId') || 'default',
+      cols: url.searchParams.get('cols'),
+      rows: url.searchParams.get('rows'),
+      resumeFrom: url.searchParams.get('resumeFrom')
+    };
+    terminalWsHandler.handleConnection(ws, params);
+    return;
   }
 
   // Get device name from query parameter (sent by mobile app)
@@ -484,6 +507,9 @@ process.on('SIGTERM', () => {
 
   // Stop output watcher
   outputWatcher.stop();
+
+  // Kill all PTY sessions
+  ptyManager.killAll();
 
   // Clear state
   state.clearState();
