@@ -106,11 +106,17 @@ function startServer() {
     process.exit(1);
   }
 
-  // Check if node_modules exists
+  // Check if node_modules exists, install if needed
   const nodeModulesPath = path.join(SKILL_DIR, 'node_modules');
   if (!fs.existsSync(nodeModulesPath)) {
-    console.error('Error: Dependencies not installed. Run: npm install in skill/');
-    process.exit(1);
+    console.error('Installing dependencies...');
+    try {
+      execSync('npm install --silent', { cwd: SKILL_DIR, stdio: 'inherit' });
+      console.error('Dependencies installed.');
+    } catch (err) {
+      console.error('Error: Failed to install dependencies. Run manually: cd skill && npm install');
+      process.exit(1);
+    }
   }
 
   // Open log file

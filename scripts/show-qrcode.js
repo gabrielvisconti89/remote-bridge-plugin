@@ -2,17 +2,27 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { execSync } = require('child_process');
 
 // State file location
 const STATE_FILE = path.join(os.homedir(), '.claude', 'remote-bridge', 'state.json');
+const SKILL_DIR = path.join(__dirname, '..', 'skill');
 
-// Try to use qrcode-terminal from skill directory
+// Try to use qrcode-terminal from skill directory, install if needed
 let qrcode;
+const qrcodePath = path.join(SKILL_DIR, 'node_modules', 'qrcode-terminal');
 try {
-  qrcode = require(path.join(__dirname, '..', 'skill', 'node_modules', 'qrcode-terminal'));
+  qrcode = require(qrcodePath);
 } catch (err) {
-  console.error('Error: qrcode-terminal not installed. Run: npm install in skill/');
-  process.exit(1);
+  // Auto-install dependencies
+  console.error('Installing dependencies...');
+  try {
+    execSync('npm install --silent', { cwd: SKILL_DIR, stdio: 'inherit' });
+    qrcode = require(qrcodePath);
+  } catch (installErr) {
+    console.error('Error: Failed to install dependencies. Run manually: cd skill && npm install');
+    process.exit(1);
+  }
 }
 
 function main() {
