@@ -44,6 +44,11 @@ app.use(logger.httpLogger());
 // Middleware: API Key authentication (optional)
 if (config.apiKey) {
   app.use((req, res, next) => {
+    // Allow screenshot images without auth (for <img> tags that can't send headers)
+    if (req.path.startsWith('/screenshot/') && req.method === 'GET' && !req.path.includes('/sync')) {
+      return next();
+    }
+
     const apiKey = req.headers['x-api-key'];
     if (apiKey !== config.apiKey) {
       return res.status(401).json({ error: 'Unauthorized', message: 'Invalid API key' });

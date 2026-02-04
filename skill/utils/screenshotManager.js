@@ -9,10 +9,123 @@ const UPLOADS_DIR = path.join(os.homedir(), '.claude', 'remote-bridge', 'uploads
 
 // Configuration
 const config = {
-  maxScreenshots: 20,
-  maxAge: 24 * 60 * 60 * 1000, // 24 hours in ms
+  maxScreenshots: 100,
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in ms
   maxUploadSize: 10 * 1024 * 1024, // 10MB
+  importSources: [
+    // Default sources to scan for images
+    '../.playwright-mcp',
+    '.playwright-mcp',
+  ],
 };
+
+// Track imported files to avoid duplicates (by source path hash)
+const IMPORTED_REGISTRY = path.join(os.homedir(), '.claude', 'remote-bridge', 'imported.json');
+
+/**
+ * Get or create imported files registry
+ * @returns {object} Registry of imported file hashes
+ */
+function getImportedRegistry() {
+  try {
+    if (fs.existsSync(IMPORTED_REGISTRY)) {
+      return JSON.parse(fs.readFileSync(IMPORTED_REGISTRY, 'utf8'));
+    }
+  } catch (err) {
+    // Ignore errors, return empty registry
+  }
+  return {};
+}
+
+/**
+ * Save imported files registry
+ * @param {object} registry - Registry to save
+ */
+function saveImportedRegistry(registry) {
+  const dir = path.dirname(IMPORTED_REGISTRY);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  fs.writeFileSync(IMPORTED_REGISTRY, JSON.stringify(registry, null, 2));
+}
+
+/**
+ * Calculate file hash for deduplication
+ * @param {string} filePath - Path to file
+ * @returns {string} MD5 hash of file
+ */
+function getFileHash(filePath) {
+  const buffer = fs.readFileSync(filePath);
+  return crypto.createHash('md5').update(buffer).digest('hex');
+}
+
+/**
+ * Import screenshots from external source folders
+ * @param {string[]} sources - Array of folder paths to scan
+ * @returns {object[]} Array of newly imported screenshot metadata
+ */
+function importFromSources(sources = []) {
+  ensureDirs();
+
+  const registry = getImportedRegistry();
+  const imported = [];
+  const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp'];
+
+  for (const source of sources) {
+    // Resolve relative paths from cwd
+    const sourcePath = path.isAbsolute(source) ? source : path.join(process.cwd(), source);
+
+    if (!fs.existsSync(sourcePath)) {
+      continue;
+    }
+
+    const files = fs.readdirSync(sourcePath);
+
+    for (const file of files) {
+      const ext = path.extname(file).toLowerCase();
+      if (!imageExtensions.includes(ext)) {
+        continue;
+      }
+
+      const filePath = path.join(sourcePath, file);
+      const stats = fs.statSync(filePath);
+
+      // Skip directories
+      if (stats.isDirectory()) {
+        continue;
+      }
+
+      // Check if already imported by path+mtime
+      const registryKey = `${filePath}:${stats.mtime.getTime()}`;
+      if (registry[registryKey]) {
+        continue;
+      }
+
+      // Import the file
+      try {
+        const result = saveScreenshotFromFile(filePath);
+        result.originalName = file;
+        result.sourcePath = filePath;
+        imported.push(result);
+
+        // Mark as imported
+        registry[registryKey] = {
+          id: result.id,
+          importedAt: new Date().toISOString(),
+        };
+      } catch (err) {
+        console.error(`Error importing ${file}:`, err.message);
+      }
+    }
+  }
+
+  // Save updated registry
+  if (imported.length > 0) {
+    saveImportedRegistry(registry);
+  }
+
+  return imported;
+}
 
 /**
  * Ensure screenshot directories exist
@@ -349,4 +462,5 @@ module.exports = {
   getUpload,
   listUploads,
   deleteUpload,
+  importFromSources,
 };

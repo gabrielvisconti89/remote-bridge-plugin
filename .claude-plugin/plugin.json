@@ -1,6 +1,6 @@
 {
   "name": "remote-bridge",
-  "version": "1.2.2",
+  "version": "1.2.4",
   "description": "Remote control Claude Code from your mobile device. Requires companion mobile app. Requires Node.js >=18.0.0.",
   "author": {
     "name": "Gabriel Visconti"

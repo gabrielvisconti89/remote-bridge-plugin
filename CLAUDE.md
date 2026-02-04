@@ -2,6 +2,8 @@
 
 Claude Code plugin for remote control from mobile devices.
 
+> **IMPORTANT:** Before debugging any bug or planning fixes, ALWAYS search the official documentation using Context7 MCP (`resolve-library-id` + `query-docs`). Many issues are caused by incorrect API usage or outdated patterns. Check docs first, then plan and execute.
+
 ## Quick Start
 
 ```bash

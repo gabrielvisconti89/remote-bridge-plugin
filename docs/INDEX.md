@@ -42,6 +42,12 @@ Welcome to the Remote Bridge Plugin documentation. This plugin enables remote co
 | [Debugging](DEBUGGING.md) | Troubleshooting and log file locations |
 | [Privacy](PRIVACY.md) | Data handling and privacy policy |
 
+## Development & Debugging
+
+| Document | Description |
+|----------|-------------|
+| [Skills Evolution](SKILLS-EVOLUTION.md) | Histórico de tentativas para fazer skills/hooks funcionarem |
+
 ## Component Overview
 
 ```

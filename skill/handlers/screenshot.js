@@ -26,6 +26,55 @@ const upload = multer({
 });
 
 /**
+ * POST /screenshot/sync
+ * Import screenshots from configured sources and return the full list
+ * This is called when the gallery opens to sync new screenshots
+ */
+router.post('/sync', (req, res) => {
+  try {
+    // Get additional sources from request body (optional)
+    const { sources = [] } = req.body;
+
+    // Combine default sources with any additional ones
+    const allSources = [...screenshotManager.config.importSources, ...sources];
+
+    // Import new screenshots from sources
+    const imported = screenshotManager.importFromSources(allSources);
+
+    // Get full list of screenshots
+    const screenshots = screenshotManager.listScreenshots();
+
+    // Return screenshots with relative paths (app will build full URL from connection)
+    const screenshotsWithUrls = screenshots.map(s => ({
+      id: s.id,
+      filename: path.basename(s.path),
+      timestamp: s.timestamp,
+      size: s.size,
+      path: `/screenshot/${s.id}`,
+    }));
+
+    logger.info('Screenshot sync completed', {
+      imported: imported.length,
+      total: screenshots.length,
+    });
+
+    res.json({
+      success: true,
+      imported: imported.length,
+      total: screenshots.length,
+      screenshots: screenshotsWithUrls,
+    });
+  } catch (err) {
+    logger.error('Failed to sync screenshots', { error: err.message });
+    res.status(500).json({
+      success: false,
+      error: 'Failed to sync screenshots',
+      message: err.message,
+    });
+  }
+});
+
+/**
  * POST /screenshot/capture
  * Trigger a screenshot capture (placeholder - actual capture via Playwright MCP)
  *
