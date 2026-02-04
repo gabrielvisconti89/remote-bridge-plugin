@@ -15,8 +15,15 @@ A companion mobile app is available for iOS and Android (see [Companion App](#co
 ## Quick Start
 
 ### 1. Start the Server
-```
+
+```bash
 /remote-bridge:start
+```
+
+or simply:
+
+```bash
+/start
 ```
 
 This displays a QR code in your terminal:
@@ -49,17 +56,87 @@ Once connected, the statusline shows:
 ```
 
 ### 4. Stop the Server
-```
+
+```bash
 /remote-bridge:stop
+```
+
+or simply:
+
+```bash
+/stop
 ```
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `/remote-bridge:start` | Start server and display QR code |
-| `/remote-bridge:stop` | Stop the server |
-| `/remote-bridge:status` | Show detailed server status |
+All commands can be used with the full prefix (`/remote-bridge:`) or the short form (just `/`). Both work identically.
+
+> **Note:** In some Claude Code versions, the autocomplete may show the short form without the prefix. Both forms are valid and will work correctly.
+
+### Start Server
+
+Starts the server and displays the QR code for connection.
+
+**Full command:**
+```bash
+/remote-bridge:start
+```
+
+**Short command:**
+```bash
+/start
+```
+
+### Stop Server
+
+Stops the server and clears the statusline.
+
+**Full command:**
+```bash
+/remote-bridge:stop
+```
+
+**Short command:**
+```bash
+/stop
+```
+
+### Check Status
+
+Shows detailed server status including connection info, URLs, and metrics.
+
+**Full command:**
+```bash
+/remote-bridge:status
+```
+
+**Short command:**
+```bash
+/status
+```
+
+### View Inbox
+
+View and execute pending commands sent from the mobile app.
+
+**Full command:**
+```bash
+/remote-bridge:inbox
+```
+
+**Short command:**
+```bash
+/inbox
+```
+
+### Commands Summary
+
+| Full Command | Short Command | Description |
+|--------------|---------------|-------------|
+| `/remote-bridge:start` | `/start` | Start server and display QR code |
+| `/remote-bridge:stop` | `/stop` | Stop the server |
+| `/remote-bridge:status` | `/status` | Show detailed server status |
+| `/remote-bridge:inbox` | `/inbox` | View pending commands from mobile |
 
 ## Architecture
 
@@ -94,16 +171,16 @@ cd remote-bridge-plugin
 
 ## How It Works
 
-1. **Start Command**: Use `/remote-bridge:start` to start the server and display QR code
+1. **Start Command**: Use `/start` (or `/remote-bridge:start`) to start the server and display QR code
 2. **QR Code**: The QR contains connection URL and API key as JSON
 3. **Mobile Scan**: The app scans the QR and connects automatically via WebSocket
 4. **Statusline**: Shows connection status, message counters, and device name
-5. **Stop Command**: Use `/remote-bridge:stop` to stop everything
+5. **Stop Command**: Use `/stop` (or `/remote-bridge:stop`) to stop everything
 
 ### Connection Flow
 
 ```
-User: /remote-bridge:start
+User: /start
     │
     ▼
 ┌─────────────────────────────────────┐
@@ -196,9 +273,10 @@ remote-bridge-plugin/
 │   ├── show-status.js  # Show detailed status
 │   └── statusline.sh   # Statusline script
 ├── skills/             # Skill definitions
-│   ├── start/          # /remote-bridge:start
-│   ├── stop/           # /remote-bridge:stop
-│   └── status/         # /remote-bridge:status
+│   ├── start/          # /start or /remote-bridge:start
+│   ├── stop/           # /stop or /remote-bridge:stop
+│   ├── status/         # /status or /remote-bridge:status
+│   └── inbox/          # /inbox or /remote-bridge:inbox
 ├── skill/              # Node.js server
 │   ├── server.js       # Main server
 │   ├── handlers/       # Request handlers
