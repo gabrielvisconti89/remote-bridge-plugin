@@ -57,12 +57,35 @@ When showing commands to the user:
 2. Ask the user which commands they want to execute
 3. Execute or dismiss based on user's choice
 
+## Commands with Image Attachments
+
+When a command has an image attached:
+
+1. The inbox shows the image path next to the command
+2. **IMPORTANT:** Use the Read tool to view the image: `Read /path/to/image.jpg`
+3. Analyze the image together with the command text
+4. Execute the task considering both the text instruction and the visual context
+
+Example workflow:
+```
+Command: "Fix the bug shown in this screenshot"
+Image:   📎 screenshot.jpg (245 KB)
+Path:    ~/.claude/remote-bridge/uploads/img_abc123.jpg
+
+Steps:
+1. First, read the attached image to understand the bug
+2. [Use Read tool on the image path]
+3. Analyze what the image shows
+4. Proceed to fix the issue based on visual + text context
+```
+
 ## User Feedback
 
 If there are pending commands:
 > You have {N} pending command(s) from your mobile device:
 >
 > 1. `{command}` - from {device} at {time}
+>    - 📎 Image attached: {filename}
 >
 > Would you like me to execute any of these commands?
 

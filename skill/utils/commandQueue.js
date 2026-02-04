@@ -68,9 +68,10 @@ function generateId() {
  * Add a command to the queue
  * @param {string} command - Command to queue
  * @param {string} deviceName - Name of the device that sent the command
+ * @param {object|null} attachment - Optional attachment metadata (e.g., image)
  * @returns {object} The added command entry
  */
-function addCommand(command, deviceName = 'Unknown Device') {
+function addCommand(command, deviceName = 'Unknown Device', attachment = null) {
   const commands = readCommands();
 
   const entry = {
@@ -80,6 +81,10 @@ function addCommand(command, deviceName = 'Unknown Device') {
     from: deviceName,
     status: 'pending',
   };
+
+  if (attachment) {
+    entry.attachment = attachment;
+  }
 
   commands.queue.push(entry);
   writeCommands(commands);

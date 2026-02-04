@@ -1,6 +1,6 @@
 {
   "name": "remote-bridge-skill",
-  "version": "1.2.4",
+  "version": "1.2.9",
   "description": "Claude Code skill for remote device control via HTTP/WebSocket",
   "main": "server.js",
   "scripts": {

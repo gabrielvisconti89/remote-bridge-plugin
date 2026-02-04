@@ -244,6 +244,82 @@ curl -X POST http://localhost:3000/shell/type \
 }
 ```
 
+### POST /shell/message
+
+Queue a command with optional image attachment (multipart/form-data). This is the recommended endpoint for mobile apps to send messages with images.
+
+**Request:**
+```bash
+# With image
+curl -X POST http://localhost:3000/shell/message \
+  -H "X-API-Key: {api-key}" \
+  -F "command=Analyze this bug screenshot" \
+  -F "deviceName=iPhone 15" \
+  -F "image=@screenshot.jpg"
+
+# Without image
+curl -X POST http://localhost:3000/shell/message \
+  -H "X-API-Key: {api-key}" \
+  -F "command=git status" \
+  -F "deviceName=iPhone 15"
+```
+
+**Form Fields:**
+| Campo | Tipo | Obrigatório | Descrição |
+|-------|------|-------------|-----------|
+| command | string | Sim | Command or message for Claude |
+| deviceName | string | Não | Name of the device (default: "Mobile App") |
+| image | file | Não | Image file (jpg, png, gif, webp, max 10MB) |
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "queued": true,
+  "id": "cmd_abc123def456",
+  "command": "Analyze this bug screenshot",
+  "from": "iPhone 15",
+  "receivedAt": "2026-02-04T12:00:00.000Z",
+  "attachment": {
+    "id": "img_xyz789abc012",
+    "originalName": "screenshot.jpg"
+  },
+  "message": "Message queued successfully. Run /remote-bridge:inbox to execute."
+}
+```
+
+**Response (without image):**
+```json
+{
+  "success": true,
+  "queued": true,
+  "id": "cmd_abc123def456",
+  "command": "git status",
+  "from": "iPhone 15",
+  "receivedAt": "2026-02-04T12:00:00.000Z",
+  "attachment": null,
+  "message": "Message queued successfully. Run /remote-bridge:inbox to execute."
+}
+```
+
+**Command Queue Entry (with attachment):**
+```json
+{
+  "id": "cmd_abc123def456",
+  "command": "Analyze this bug screenshot",
+  "receivedAt": "2026-02-04T12:00:00.000Z",
+  "from": "iPhone 15",
+  "status": "pending",
+  "attachment": {
+    "type": "image",
+    "id": "img_xyz789abc012",
+    "path": "/Users/.../.claude/remote-bridge/uploads/img_xyz789abc012.jpg",
+    "originalName": "screenshot.jpg",
+    "size": 123456
+  }
+}
+```
+
 ### GET /shell/processes
 
 Lista processos ativos iniciados pelo servidor.

@@ -73,6 +73,14 @@ function main() {
     console.log(`  \x1b[90mCommand:\x1b[0m  \x1b[1m\x1b[32m${cmd.command}\x1b[0m`);
     console.log(`  \x1b[90mFrom:\x1b[0m     📱 ${cmd.from}`);
     console.log(`  \x1b[90mReceived:\x1b[0m ${formatTime(cmd.receivedAt)}`);
+
+    // Display attachment info if present
+    if (cmd.attachment && cmd.attachment.type === 'image') {
+      const sizeKB = Math.round(cmd.attachment.size / 1024);
+      console.log(`  \x1b[90mImage:\x1b[0m    📎 ${cmd.attachment.originalName} (${sizeKB} KB)`);
+      console.log(`  \x1b[90mPath:\x1b[0m     ${cmd.attachment.path}`);
+    }
+
     console.log('');
   });
 

@@ -2,10 +2,12 @@ const { spawn, execSync } = require('child_process');
 const { Router } = require('express');
 const fs = require('fs');
 const os = require('os');
+const multer = require('multer');
 
 const config = require('../utils/config');
 const logger = require('../utils/logger');
 const commandQueue = require('../utils/commandQueue');
+const screenshotManager = require('../utils/screenshotManager');
 
 // Platform detection
 const platform = os.platform();
@@ -513,6 +515,87 @@ router.post('/type', async (req, res, next) => {
       from: device,
       receivedAt: entry.receivedAt,
       message: 'Command queued successfully. Run /remote-bridge:inbox to execute.',
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Multer configuration for image uploads
+const messageUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    cb(null, allowed.includes(file.mimetype));
+  },
+});
+
+/**
+ * POST /shell/message
+ * Queue a command with optional image attachment (multipart/form-data)
+ * Body: { command, deviceName? } + optional image file
+ */
+router.post('/message', messageUpload.single('image'), async (req, res, next) => {
+  try {
+    const { command, deviceName } = req.body;
+
+    if (!command) {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'Command is required',
+      });
+    }
+
+    // Get device name from request or default
+    const device = deviceName || 'Mobile App';
+
+    let attachment = null;
+
+    // Handle image upload if present
+    if (req.file) {
+      const upload = screenshotManager.saveUpload(req.file.buffer, req.file.originalname);
+
+      attachment = {
+        type: 'image',
+        id: upload.id,
+        path: upload.path,
+        originalName: upload.originalName,
+        size: upload.size,
+      };
+    }
+
+    // Add command to queue with optional attachment
+    const entry = commandQueue.addCommand(command, device, attachment);
+
+    logger.info('Message queued', { id: entry.id, command, from: device, hasImage: !!attachment });
+
+    // Display prominent log in terminal
+    console.log('');
+    console.log('\x1b[36m' + '=' .repeat(60) + '\x1b[0m');
+    console.log('\x1b[36m  \x1b[1m\x1b[33m New message received from mobile\x1b[0m');
+    console.log('\x1b[36m' + '=' .repeat(60) + '\x1b[0m');
+    console.log(`  \x1b[90mFrom:\x1b[0m    ${device}`);
+    console.log(`  \x1b[90mCommand:\x1b[0m \x1b[1m${command}\x1b[0m`);
+    if (attachment) {
+      const sizeKB = Math.round(attachment.size / 1024);
+      console.log(`  \x1b[90mImage:\x1b[0m   📎 ${attachment.originalName} (${sizeKB} KB)`);
+    }
+    console.log(`  \x1b[90mID:\x1b[0m      ${entry.id}`);
+    console.log('');
+    console.log('  \x1b[32mRun /remote-bridge:inbox to view and execute\x1b[0m');
+    console.log('\x1b[36m' + '=' .repeat(60) + '\x1b[0m');
+    console.log('');
+
+    res.json({
+      success: true,
+      queued: true,
+      id: entry.id,
+      command,
+      from: device,
+      receivedAt: entry.receivedAt,
+      attachment: attachment ? { id: attachment.id, originalName: attachment.originalName } : null,
+      message: 'Message queued successfully. Run /remote-bridge:inbox to execute.',
     });
   } catch (err) {
     next(err);
